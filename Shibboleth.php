@@ -1,4 +1,9 @@
-<?php if (!defined('TL_ROOT')) die('You can not access this file directly!');
+<?php
+
+namespace iMi\ContaoShibboleth;
+?><?php if (!defined('TL_ROOT')) die('You can not access this file directly!');
+
+
 
 /**
  * Contao Open Source CMS
@@ -10,12 +15,12 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation, either
  * version 3 of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program. If not, please visit the Free
  * Software Foundation website at <http://www.gnu.org/licenses/>.
@@ -27,21 +32,21 @@
  */
 
 
-class Shibboleth extends Controller
+class Shibboleth extends \Controller
 {
 
 	public function authenticateBackend($strBuffer)
 	{
 		$script = basename($this->Environment->script);
 		$backend = (version_compare(VERSION, '2.9', '<') ? 'typolight/' : 'contao/');
-		
+
 		if ($script == 'index.php')
 		{
 			if (!$this->sessionActive() && $GLOBALS['TL_CONFIG']['shibForceBackend'])
 			{
 				if ($GLOBALS['TL_CONFIG']['shibForceBackend'] != '')
 				{
-					$arrDomains = trimsplit(',', $GLOBALS['TL_CONFIG']['shibForceHosts']);
+					$arrDomains = trimsplit(',', $GLOBALS['TL_CONFIG']['shibForceHosts'] ?? '');
 
 					if (!in_array($this->Environment->host, $arrDomains))
 					{
@@ -90,7 +95,10 @@ class Shibboleth extends Controller
 
 	public function replaceTags($strTag)
 	{
-		list($tag, $key) = explode('::', $strTag);
+		$arrTag = explode('::', $strTag);
+
+        $tag = $arrTag[0] ?? null;
+        $key = $arrTag[1] ?? null;
 
 		if ($tag == 'shibboleth')
 		{
@@ -116,11 +124,11 @@ class Shibboleth extends Controller
 		if ($this->sessionActive())
 		{
 			$this->import('Database');
-			
+
 			$eppn = explode('@', $_SERVER['eppn']);
-			
+
 			$objUser = $this->Database->prepare("SELECT * FROM tl_member WHERE username=?")->limit(1)->execute($eppn[0]);
-			
+
 			if (!$objUser->numRows)
 			{
 				$_SESSION['TL_ERROR'][] = $GLOBALS['TL_LANG']['ERR']['invalidLogin'];
@@ -130,7 +138,7 @@ class Shibboleth extends Controller
 			{
 				return $objUser;
 			}
-			
+
 			return false;
 		}
 		elseif ($blnForce)
@@ -138,11 +146,11 @@ class Shibboleth extends Controller
 			$strUrl = ($GLOBALS['TL_CONFIG']['shibSSL'] ? str_replace('http://', 'https://', $this->Environment->base) : $this->Environment->base) . $this->Environment->request . (strpos($this->Environment->request, '?') === false ? '?' : '&') . 'shibauth=1';
 			$this->redirect($GLOBALS['TL_CONFIG']['shibLoginURL'] . '?target=' . urlencode($strUrl));
 		}
-		
+
 		return false;
 	}
-	
-	
+
+
 	private function login($objUser, $strTable='tl_user', $strCookie='BE_USER_AUTH')
 	{
 		$time = time();
@@ -228,13 +236,13 @@ class Shibboleth extends Controller
 		$this->log('User "' . $objUser->username . '" has logged in', 'Shibboleth login()', TL_ACCESS);
 		return true;
 	}
-	
-	
+
+
 	private function sessionActive()
 	{
-		if ($_SERVER['Shib-Session-ID'] == '' && $_SERVER['HTTP_SHIB_IDENTITY_PROVIDER'] == '')
+		if (($_SERVER['Shib-Session-ID'] ?? '') == '' && ($_SERVER['HTTP_SHIB_IDENTITY_PROVIDER'] ?? '') == '')
 			return false;
-		
+
 		return true;
 	}
 }

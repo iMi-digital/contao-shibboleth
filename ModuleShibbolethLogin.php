@@ -1,4 +1,9 @@
-<?php if (!defined('TL_ROOT')) die('You can not access this file directly!');
+<?php
+
+namespace iMi\ContaoShibboleth;
+?><?php use Contao\BackendTemplate;
+
+if (!defined('TL_ROOT')) die('You can not access this file directly!');
 
 /**
  * Contao Open Source CMS
@@ -10,12 +15,12 @@
  * modify it under the terms of the GNU Lesser General Public
  * License as published by the Free Software Foundation, either
  * version 3 of the License, or (at your option) any later version.
- * 
+ *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * Lesser General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this program. If not, please visit the Free
  * Software Foundation website at <http://www.gnu.org/licenses/>.
@@ -27,7 +32,7 @@
  */
 
 
-class ModuleShibbolethLogin extends Module
+class ModuleShibbolethLogin extends \Module
 {
 
 	/**
@@ -35,14 +40,12 @@ class ModuleShibbolethLogin extends Module
 	 * @var string
 	 */
 	protected $strTemplate = 'mod_shibbolethlogin';
-	
+
 	/**
 	 * Shibboleth object
-	 * @var object
+     * // FIXME: typehint property
 	 */
-	protected $Shibboleth;
-	
-	
+
 	public function generate()
 	{
 		if (TL_MODE == 'BE')
@@ -57,13 +60,13 @@ class ModuleShibbolethLogin extends Module
 
 			return $objTemplate->parse();
 		}
-		
-		
+
+
 		// Login
 		if ($this->Input->post('FORM_SUBMIT') == 'tl_shibbolethlogin' || $this->autologin || $this->Input->get('shibauth'))
 		{
-			$this->import('Shibboleth');
-			
+			$this->import('iMi\ContaoShibboleth\Shibboleth', 'Shibboleth');
+
 			if (($objUser = $this->Shibboleth->authenticateFrontend(($this->Input->post('FORM_SUBMIT') == 'tl_shibbolethlogin'))) !== false)
 			{
 				// HOOK: post login callback
@@ -75,11 +78,11 @@ class ModuleShibbolethLogin extends Module
 						$this->$callback[0]->$callback[1]($objUser);
 					}
 				}
-				
+
 				$this->redirect($this->findRedirectUrl());
 			}
 		}
-		
+
 		// Logout and redirect to the website root if the current page is protected
 		elseif ($this->Input->post('FORM_SUBMIT') == 'tl_logout')
 		{
@@ -118,11 +121,11 @@ class ModuleShibbolethLogin extends Module
 
 			$this->reload();
 		}
-		
+
 		return parent::generate();
 	}
-	
-	
+
+
 	protected function compile()
 	{
 		// Show logout form
@@ -145,17 +148,17 @@ class ModuleShibbolethLogin extends Module
 
 			return;
 		}
-		
+
 		$blnHasError = false;
 
-		if (count($_SESSION['TL_ERROR']))
+		if (count($_SESSION['TL_ERROR'] ?? []))
 		{
 			$blnHasError = true;
 			$_SESSION['LOGIN_ERROR'] = $_SESSION['TL_ERROR'][0];
 			$_SESSION['TL_ERROR'] = array();
 		}
 
-		if (strlen($_SESSION['LOGIN_ERROR']))
+		if (strlen($_SESSION['LOGIN_ERROR'] ?? ''))
 		{
 			$blnHasError = true;
 			$this->Template->message = $_SESSION['LOGIN_ERROR'];
@@ -167,8 +170,8 @@ class ModuleShibbolethLogin extends Module
 		$this->Template->formSubmit = 'tl_shibbolethlogin';
 		$this->Template->slabel = $GLOBALS['TL_LANG']['MSC']['shibLogin'];
 	}
-	
-	
+
+
 	protected function findRedirectUrl($objUser)
 	{
 		$strRedirect = $this->Environment->request;
@@ -229,7 +232,7 @@ class ModuleShibbolethLogin extends Module
 				}
 			}
 		}
-		
+
 		return $strRedirect;
 	}
 }
